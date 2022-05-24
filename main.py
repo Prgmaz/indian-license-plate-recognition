@@ -3,12 +3,12 @@ import numpy as np
 from object_detection import recognize_text_license_plate
 
 if __name__ == "__main__":
-    cam = True # True for camera input, False for video input
+    cam = False # True for camera input, False for video input
     cap = None
     if cam:
         cap = cv2.VideoCapture(0)
     else:
-        file_path = "" # Enter File Path here 
+        file_path = "./videos/Cars0.mp4" # Enter File Path here 
         cap = cv2.VideoCapture(file_path)
 
     if (cap.isOpened()== False): 

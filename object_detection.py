@@ -49,22 +49,6 @@ def yolo_license(image, CONFIDENCE_THRESHOLD=0.5, THRESHOLD=0.5):
             qualified_boxes.append(boxes[i])
     
     return qualified_boxes
-    # image = cv2.resize(image, (1280, 720))
-    # cv2.imshow("Image", image)
-    # cv2.waitKey(0)
-    # image = cv2.imread('output/'+str(args['image']).split('.')[0]+'_predictions.jpg')
-    # gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    # gray = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
-    # gray = cv2.medianBlur(gray, 3)
-    # gray = remove_noise_and_smooth(gray)
-    # filename = 'output/'+str(args['image']).split('.')[0]+"_preprocessed.jpg"
-    # cv2.imwrite(filename, gray)
-    # text = pytesseract.image_to_string(Image.open(filename))
-    # print(text)
-    # cv2.imshow("cropped", image)
-    # cv2.imshow("cropped_preprocessed", gray)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
 
 def recognize_text_license_plate(image, display=True, gpu=False, languages=['en']):
     reader = easyocr.Reader(languages, gpu=gpu)
@@ -77,19 +61,24 @@ def recognize_text_license_plate(image, display=True, gpu=False, languages=['en'
     image = cv2.resize(image, (h, w))
     outputs = yolo_license(image)
     
-    texts = []
+    x, y, w, h = w, h, 0, 0
     for o in outputs:
-        x, y, w, h = o
-        temp = image[y: y+h, x: x+w]
+        x_, y_, w_, h_ = o
+        x = abs(min(x, x_) )
+        y = abs(min(y, y_))
+        w = abs(max(w, x+w_))
+        h = abs(max(h, y+h_))
+    print((x, y, w, h))
+    temp = image[y: h, x: w]
+    if display and temp.any():
+        plt.imshow(temp)
+        plt.show()
         plt.imsave("temp-license.png", temp)
-        results = reader.readtext("temp-license.png", paragraph=True, x_ths=2.0, y_ths=1)
-        total_text = ""
-        for r in results:
-            _, text = r
-            total_text += text
-        if display:
-            plt.imshow(temp)
-            plt.title(total_text)
-            plt.show()
-        texts.append(total_text)
-    return texts
+        results = reader.recognize("temp-license.png", paragraph=True, detail=0)
+        total_text = "".join(results)
+        return total_text
+    elif not temp.any():
+        results = reader.recognize(image, paragraph=True, detail=0)
+        total_text = "".join(results)
+        return total_text
+    return None
